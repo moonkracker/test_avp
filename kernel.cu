@@ -100,7 +100,7 @@ __global__ void ApplyPrewittFilter(unsigned char* input_data, unsigned char* out
 		if (tmp1 < 0) tmp1 = 0;
 		if (tmp2 > 255) tmp2 = 255;
 		if (tmp2 < 0) tmp2 = 0;
-		out_uchar4.x = (tmp1 >= tmp2) ? unsigned char(tmp1) : unsigned char(tmp2);
+		out_uchar4.x = (tmp1 >= tmp2) ? (unsigned char)tmp1 : (unsigned char)tmp2;
 		////////////////////
 		tmp1 = (seventh_int.y + eighth_int.x + eighth_int.w) - (first_int.y + second_int.x + second_int.w);
 		tmp2 = (second_int.w + fifth_int.w + eighth_int.w) - (first_int.y + fourth_int.y + seventh_int.y);
