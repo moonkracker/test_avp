@@ -1,4 +1,4 @@
-﻿#include "cuda_runtime.h"
+#include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "inc/helper_image.h"
 
@@ -9,7 +9,6 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
-#include <windows.h>
 
 using namespace std;
 
@@ -169,104 +168,6 @@ pixel* PadDataByOnePixel(pixel* input_data, int width, int height)
 	return output_data;
 }
 
-void PrintMatrix(unsigned char* data, const int width, const int height)
-{
-	for (int i = 0; i < height; i++)
-	{
-		for (int j = 0; j < width; j++)
-		{
-			cout << setw(5) << +data[i * width + j];
-			if (j == width - 1) cout << endl;
-		}
-	}
-
-	cout << endl << endl;
-}
-
-void PrintPixelMatrix(pixel* data, const int width, const int height)
-{
-	for (int i = 0; i < height; i++)
-	{
-		for (int j = 0; j < width; j++)
-		{
-			cout << setw(5) << +data[i * width + j].r << setw(5) << +data[i * width + j].g << setw(5) << +data[i * width + j].b << setw(5);
-			if (j == width - 1)
-			{
-				cout << endl;
-			}
-		}
-	}
-
-	cout << endl << endl;
-}
-#define RED 0x0C
-#define WHITE 0x07
-void changeColors(int color)
-{
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | color));
-}
-
-void PrintPixelMatrixCheck(pixel* data, pixel* data_cpu, const int width, const int height)
-{
-	for (int i = 0; i < height; i++)
-	{
-		for (int j = 0; j < width; j++)
-		{
-			if (+data[i * width + j].r != +data_cpu[i * width + j].r)
-			{
-				changeColors(RED);
-				cout << setw(5) << +data[i * width + j].r;
-				changeColors(WHITE);
-			}
-			else
-				cout << setw(5) << +data[i * width + j].r;
-			if (+data[i * width + j].g != +data_cpu[i * width + j].g)
-			{
-				changeColors(RED);
-				cout << setw(5) << +data[i * width + j].g;
-				changeColors(WHITE);
-			}
-			else
-				cout << setw(5) << +data[i * width + j].g;
-
-			if (+data[i * width + j].b != +data_cpu[i * width + j].b)
-			{
-				changeColors(RED);
-				cout << setw(5) << +data[i * width + j].b;
-				changeColors(WHITE);
-			}
-			else
-				cout << setw(5) << +data[i * width + j].b;
-
-			//cout << setw(5) << +data[i * width + j].r << setw(5) << +data[i * width + j].g << setw(5) << +data[i * width + j].b << setw(5);
-			if (j == width - 1)
-			{
-				cout << endl;
-			}
-		}
-	}
-
-	cout << endl << endl;
-}
-
-//void PrintPixelMatrix(pixel* data, const int width, const int height)
-//{
-//	for (int i = 0; i < height; i++)
-//	{
-//		for (int j = 0; j < width; j++)
-//		{
-//			cout << setw(20) << "{" << +data[i * width + j].r << "," << +data[i * width + j].g << "," << +data[i * width + j].b << "},";
-//			if (j == width - 1)
-//			{
-//				cout << endl;
-//			}
-//		}
-//	}
-//
-//	cout << endl << endl;
-//}
-
 // Use PadDataByOneByte transforamtion for input before using this function
 void PrewittFilter(pixel* input_matrix, pixel* output_matrix, const int width, const int height, const int padded_width, const int padded_height)
 {
@@ -357,77 +258,9 @@ void postprocess(const unsigned char* in_data, const unsigned char* out_data, in
 	cout << "Time difference: " << (cpu - gpu) << endl;
 }
 
-void generateKekw(pixel* input_matrix, const int width, const int height)
-{
-	int cnt = 1;
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			input_matrix[y * width + x].r = static_cast<unsigned char>(cnt);
-			cnt++;
-			input_matrix[y * width + x].g = static_cast<unsigned char>(cnt);
-			cnt++;
-			input_matrix[y * width + x].b = static_cast<unsigned char>(cnt);
-			cnt++;
-		}
-	}
-}
-
-void printFile(pixel* data, pixel* data_cpu, const int width, const int height)
-{
-
-	const char* filename = "report.csv";
-	const char* separator = ";";
-	ofstream file(filename);
-	for (int i = 0; i < height; i++)
-	{
-		for (int j = 0; j < width; j++)
-		{
-			if (+data[i * width + j].r != +data_cpu[i * width + j].r)
-			{
-				file << "[" << +data[i * width + j].r << "]" << separator;
-			}
-			else
-				file << +data[i * width + j].r << separator;
-			if (+data[i * width + j].g != +data_cpu[i * width + j].g)
-			{
-				file << "[" << +data[i * width + j].g << "]" << separator;
-			}
-			else
-				file << +data[i * width + j].g << separator;
-
-			if (+data[i * width + j].b != +data_cpu[i * width + j].b)
-			{
-				file << "[" << +data[i * width + j].b << "]" << separator;
-			}
-			else
-				file << +data[i * width + j].b << separator;
-			if (j == width - 1)
-			{
-				file << endl;
-			}
-		}
-	}
-	file << endl;
-	for (int i = 0; i < height; i++)
-	{
-		for (int j = 0; j < width; j++)
-		{
-			file << +data_cpu[i * width + j].r << separator << +data_cpu[i * width + j].g << separator << +data_cpu[i * width + j].b << separator;
-			if (j == width - 1)
-			{
-				file << endl;
-			}
-		}
-
-	}
-	file.close();
-}
-
 int main()
 {
-	char file_name[] = "svinka.ppm";
+	char file_name[] = "nature.ppm";
 	char cpu_resilt_file_name[] = "CPU_result.ppm";
 	char gpu_resilt_file_name[] = "GPU_result.ppm";
 
@@ -436,8 +269,7 @@ int main()
 	int channels = 0;
 
 	pixel* input_data = nullptr;
-	//pixel* input_data = new pixel[width * height];
-	//generateKekw(input_data, width, height);
+
 	__loadPPM(
 		file_name, reinterpret_cast<unsigned char**>(&input_data),
 		reinterpret_cast<unsigned int*>(&width),
