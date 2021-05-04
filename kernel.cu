@@ -53,7 +53,6 @@ __global__ void ApplyPrewittFilter(unsigned char* input_data, unsigned char* out
 
 	const int int_widht = in_pitch / sizeof(int);
 	const int output_int_width = out_pitch / sizeof(int);
-	const int width_border = (width + sizeof(int) - 1) / sizeof(int);
 
 	uchar4* reintterpreted_input = reinterpret_cast<uchar4*>(input_data);
 	uchar4* reintterpreted_output = reinterpret_cast<uchar4*>(output_data);
@@ -81,7 +80,7 @@ __global__ void ApplyPrewittFilter(unsigned char* input_data, unsigned char* out
 	__syncthreads();
 
 	if (x <= int_widht && y <= padded_height) {
-		uchar4 out_uchar4 = { y * output_int_width + x };
+		uchar4 out_uchar4 = { 0 };
 		uchar4 first_int = shared_memory[threadIdx.y][threadIdx.x];
 		uchar4 second_int = shared_memory[threadIdx.y][threadIdx.x + 1];
 		uchar4 third_int = shared_memory[threadIdx.y][threadIdx.x + 2];
@@ -293,9 +292,7 @@ int main()
 
 	const size_t width_in_bytes = width * sizeof(pixel);
 	const size_t padded_width_in_bytes = padded_width * sizeof(pixel);
-
-	const size_t size_in_bytes = width_in_bytes * height;
-
+	
 	pixel* cpu_output_data = new pixel[size];
 	pixel* gpu_output_data = new pixel[size];
 
