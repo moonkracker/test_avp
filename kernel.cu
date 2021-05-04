@@ -261,8 +261,15 @@ void postprocess(const unsigned char* in_data, const unsigned char* out_data, in
 int main()
 {
 	char file_name[] = "nature.ppm";
-	char cpu_resilt_file_name[] = "CPU_result.ppm";
-	char gpu_resilt_file_name[] = "GPU_result.ppm";
+	char filename_str[] = "nature_";
+	char gpu_str[ ]= "GPU_result.ppm";
+	char cpu_str[ ]= "CPU_result.ppm";
+	char* cpu_result_file_name = (char*)malloc(1+strlen(file_name)+strlen(cpu_str));
+	char* gpu_result_file_name = (char*)malloc(1+strlen(file_name)+strlen(gpu_str));
+	strcpy(cpu_result_file_name, filename_str);
+	strcat(cpu_result_file_name, cpu_str);
+	strcpy(gpu_result_file_name, filename_str);
+	strcat(gpu_result_file_name, gpu_str);
 
 	size_t width = 0;
 	size_t height = 0;
@@ -343,8 +350,8 @@ int main()
 	// check
 	postprocess(reinterpret_cast<unsigned char*>(cpu_output_data), reinterpret_cast<unsigned char*>(gpu_output_data), width * 3, height, cpu_time_count, gpu_time_count);
 
-	__savePPM(cpu_resilt_file_name, reinterpret_cast<unsigned char*>(cpu_output_data), width, height, channels);
-	__savePPM(gpu_resilt_file_name, reinterpret_cast<unsigned char*>(gpu_output_data), width, height, channels);
+	__savePPM(cpu_result_file_name, reinterpret_cast<unsigned char*>(cpu_output_data), width, height, channels);
+	__savePPM(gpu_result_file_name, reinterpret_cast<unsigned char*>(gpu_output_data), width, height, channels);
 
 	checkCuda(cudaEventDestroy(startEvent), "CudaEventDestroy");
 	checkCuda(cudaEventDestroy(stopEvent), "CudaEventDestroy");
