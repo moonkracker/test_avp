@@ -226,87 +226,19 @@ void PrewittFilter(pixel* input_matrix, pixel* output_matrix, const int width, c
 	}
 }
 
-void ApplyPrewittFilter(pixel* input_matrix, pixel* output_matrix, const int width, const int height)
+void ApplyPrewittFilter(pixel* input_matrix, pixel* output_matrix, const int width, const int height, pixel* gpu_output_data)
 {
 	pixel* padded_input_matrix = PadDataByOnePixel(input_matrix, width, height);
 
 	const int padded_width = width + 2;
 	const int padded_height = height + 2;
-	//PrintPixelMatrix(padded_input_matrix, padded_width, padded_height);
 	PrewittFilter(padded_input_matrix, output_matrix, width, height, padded_width, padded_height);
 }
 
-// Check errors
-void postprocess(const unsigned char* in_data, const unsigned char* out_data, int width, int height, float cpu, float gpu)
+
+void cuda_filter(size_t width, size_t height, const size_t width_in_bytes, const size_t padded_width_in_bytes, pixel* input_data)
 {
-
-	int cnt = 0;
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			if (in_data[y * width + x] != out_data[y * width + x])
-			{
-				//cout << endl << "*** FAILED ***" << endl;
-				if (cnt < 100) printf("Error at x:%d y:%d\n", x, y);
-				cnt++;
-			}
-		}
-	}
-	printf("NUM ERRORS: %d \n", cnt);
-	cout << "Time difference: " << (cpu - gpu) << endl;
-}
-
-int main()
-{
-	char file_name[] = "nature.ppm";
-	char filename_str[] = "nature_";
-	char gpu_str[ ]= "GPU_result.ppm";
-	char cpu_str[ ]= "CPU_result.ppm";
-	char* cpu_result_file_name = (char*)malloc(1+strlen(file_name)+strlen(cpu_str));
-	char* gpu_result_file_name = (char*)malloc(1+strlen(file_name)+strlen(gpu_str));
-	strcpy(cpu_result_file_name, filename_str);
-	strcat(cpu_result_file_name, cpu_str);
-	strcpy(gpu_result_file_name, filename_str);
-	strcat(gpu_result_file_name, gpu_str);
-
-	size_t width = 0;
-	size_t height = 0;
-	int channels = 0;
-
-	pixel* input_data = nullptr;
-
-	__loadPPM(
-		file_name, reinterpret_cast<unsigned char**>(&input_data),
-		reinterpret_cast<unsigned int*>(&width),
-		reinterpret_cast<unsigned int*>(&height),
-		reinterpret_cast<unsigned int*>(&channels)
-	);
-
-	cout << width << " " << height << " " << channels << endl << endl;
-
-	const size_t padded_width = width + 2;
-	const size_t padded_height = height + 2;
-
-	const size_t size = width * height;
-
-	const size_t width_in_bytes = width * sizeof(pixel);
-	const size_t padded_width_in_bytes = padded_width * sizeof(pixel);
-	
-	pixel* cpu_output_data = new pixel[size];
-	pixel* gpu_output_data = new pixel[size];
-
-	// ********************************************************************************************************
-
-	cout << "Filtering via CPU" << endl;
-	auto start_cpu = chrono::steady_clock::now();
-	ApplyPrewittFilter(input_data, cpu_output_data, width, height);
-	auto end_cpu = chrono::steady_clock::now();
-	auto cpu_time = end_cpu - start_cpu;
-	float cpu_time_count = chrono::duration<double, milli>(cpu_time).count();
-	cout << "CPU time: " << chrono::duration<double, milli>(cpu_time).count() << endl;
-
-	// ********************************************************************************************************
+    // ********************************************************************************************************
 
 	size_t input_pitch = 0;
 	pixel* padded_input = PadDataByOnePixel(input_data, width, height);
@@ -342,19 +274,9 @@ int main()
 
 	checkCuda(cudaMemcpy2D(reinterpret_cast<unsigned char*>(gpu_output_data), width_in_bytes, pitched_output_data, output_pitch, width_in_bytes, height, cudaMemcpyDeviceToHost), "Memcpu2d");
 
-	// ********************************************************************************************************
-
-	// check
-	postprocess(reinterpret_cast<unsigned char*>(cpu_output_data), reinterpret_cast<unsigned char*>(gpu_output_data), width * 3, height, cpu_time_count, gpu_time_count);
-
-	__savePPM(cpu_result_file_name, reinterpret_cast<unsigned char*>(cpu_output_data), width, height, channels);
-	__savePPM(gpu_result_file_name, reinterpret_cast<unsigned char*>(gpu_output_data), width, height, channels);
 
 	checkCuda(cudaEventDestroy(startEvent), "CudaEventDestroy");
 	checkCuda(cudaEventDestroy(stopEvent), "CudaEventDestroy");
 	checkCuda(cudaFree(pitched_input_data), "CudaFree");
 	checkCuda(cudaFree(pitched_output_data), "CudaFree");
-	delete[] input_data;
-	delete[] cpu_output_data;
-	delete[] gpu_output_data;
 }
